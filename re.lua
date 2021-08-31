@@ -187,6 +187,26 @@ local exp = m.P{ "Exp",
                          )
             + "=>" * S * defwithfunc(m.Cmt)
             + "~>" * S * defwithfunc(m.Cf)
+            + "$>" * S * defwithfunc(function(a, b)
+                if m.type(b) ~= 'pattern' then
+                  error('expected lpeg pattern after $> operator, got ' .. type(b))
+                end
+                local a_mem = ''
+                local a_cap = m.Cmt(m.C(a), function(_, _, scope)
+                  if scope then
+                    a_mem = scope
+                    return true
+                  end
+                end)
+                local b_with_endpos = m.Ct(b) * m.Cp()
+                return m.Cmt(#a_cap, function(_, i)
+                  local scope = a_mem
+                  local t_cap, pos = b_with_endpos:match(scope)
+                  if t_cap then
+                    return i+pos-1, unpack(t_cap)
+                  end
+                end)
+              end)
             ) * S
           )^0, function (a,b,f) return f(a,b) end );
   Primary = "(" * m.V"Exp" * ")"
