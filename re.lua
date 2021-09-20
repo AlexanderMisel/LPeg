@@ -205,6 +205,8 @@ local exp = m.P{ "Exp",
                   local t_cap, pos = b_with_endpos:match(scope)
                   if t_cap then
                     return i+pos-1, unpack(t_cap)
+                  else
+                    return true
                   end
                 end)
               end)
