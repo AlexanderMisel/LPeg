@@ -200,13 +200,13 @@ local exp = m.P{ "Exp",
                   end
                 end)
                 local b_with_endpos = m.Ct(b) * m.Cp()
-                return m.Cmt(#a_cap, function(_, i)
+                return m.Cmt(#a_cap * m.P(1), function(_, i)
                   local scope = a_mem
                   local t_cap, pos = b_with_endpos:match(scope)
-                  if t_cap then
-                    return i+pos-1, unpack(t_cap)
+                  if t_cap and pos > 1 then
+                    return i+pos-2, unpack(t_cap)
                   else
-                    return true
+                    return false
                   end
                 end)
               end)
