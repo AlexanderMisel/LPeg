@@ -135,9 +135,46 @@ local defined = "%" * Def / function (c,Defs)
   return cat
 end
 
-local Range = m.Cs(any * (m.P"-"/"") * (any - "]")) / mm.R
+function codepoint(utf8_str)
+    local codepoint = 0
+    local byte_count = 0
 
-local item = (defined + Range + m.C(any)) / m.P
+    for i = 1, #utf8_str do
+        local byte = utf8_str:byte(i)
+
+        if byte_count ~= 0 then
+            codepoint = bit.bor(bit.lshift(codepoint, 6), bit.band(byte, 0x3F))
+            byte_count = byte_count - 1
+        else
+            if byte < 0x80 then
+                codepoint = byte
+            elseif byte < 0xE0 then
+                byte_count = 1
+                codepoint = bit.band(byte, 0x1F)
+            elseif byte < 0xF0 then
+                byte_count = 2
+                codepoint = bit.band(byte, 0x0F)
+            else
+                byte_count = 3
+                codepoint = bit.band(byte, 0x07)
+            end
+        end
+
+        if byte_count == 0 then break end
+    end
+
+    return codepoint
+end
+
+local cont = lpeg.R("\128\191")
+local any_utf8 = lpeg.R("\0\127")
+               + lpeg.R("\194\223") * cont
+               + lpeg.R("\224\239") * cont * cont
+               + lpeg.R("\240\244") * cont * cont * cont
+
+local Range = ((any_utf8 / codepoint) * (m.P"-") * ((any_utf8 - "]") / codepoint)) / mm.utfR
+
+local item = (defined + Range + m.C(any_utf8)) / m.P
 
 local Class =
     "["
